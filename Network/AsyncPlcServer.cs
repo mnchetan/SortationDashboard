@@ -11,79 +11,69 @@ namespace SortationDashboard.Network
         private TcpListener _listener;
         private bool _isRunning;
 
+        // 1. Define events for the UI to subscribe to
+        public event Action<string> OnClientConnected;
+        public event Action<string> OnMessageReceived;
+        public event Action<string> OnServerError;
+
         public async Task StartListeningAsync(int port)
         {
             _listener = new TcpListener(IPAddress.Any, port);
             _listener.Start();
             _isRunning = true;
-            Console.WriteLine($"[AsyncServer] Listening on Port {port}...");
+
+            // Replaced Console.WriteLine
+            OnClientConnected?.Invoke($"Listening on Port {port}...");
 
             try
             {
                 while (_isRunning)
                 {
-                    // 1. Await a connection. The thread is freed up while waiting!
                     TcpClient client = await _listener.AcceptTcpClientAsync();
-                    Console.WriteLine($"[AsyncServer] PLC Connected from {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
 
-                    // 2. FIRE AND FORGET: Hand the client off to a background task.
-                    // The '_' discard operator tells the compiler we intentionally aren't waiting for this to finish.
-                    // The loop immediately goes back to waiting for the NEXT connection.
+                    // Trigger event when a PLC connects
+                    string clientIp = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                    OnClientConnected?.Invoke($"PLC Connected from {clientIp}");
+
                     _ = HandleClientConnectionAsync(client);
                 }
             }
-            catch (ObjectDisposedException)
-            {
-                // This exception is expected when we call listener.Stop() while it's awaiting a connection
-                Console.WriteLine("[AsyncServer] Listener has been shut down.");
-            }
             catch (Exception ex)
             {
-                Console.WriteLine($"[AsyncServer] Fatal Exception: {ex.Message}");
+                OnServerError?.Invoke($"Fatal Exception: {ex.Message}");
             }
         }
 
         private async Task HandleClientConnectionAsync(TcpClient client)
         {
-            // The 'using' statements ensure the socket is gracefully closed and memory is freed
-            // even if the PLC abruptly loses power or drops the connection.
             using (client)
             using (NetworkStream stream = client.GetStream())
             {
-                // A 4KB buffer is standard for hardware messaging
                 byte[] buffer = new byte[4096];
-
                 try
                 {
-                    // Loop continuously to read data from this specific PLC
                     while (client.Connected)
                     {
-                        // 3. Await incoming bytes. Again, the thread is freed while waiting for network I/O.
                         int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
 
-                        // If bytesRead is 0, the client initiated a graceful disconnect
                         if (bytesRead == 0)
                         {
-                            Console.WriteLine("[AsyncServer] PLC disconnected gracefully.");
+                            OnClientConnected?.Invoke("PLC disconnected gracefully.");
                             break;
                         }
 
-                        // Decode the raw bytes
                         string receivedData = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        Console.WriteLine($"[AsyncServer] Processed Event: {receivedData}");
 
-                        // Simulate a quick database write or business logic check
-                        await Task.Delay(50);
+                        // 2. Trigger event when data arrives
+                        OnMessageReceived?.Invoke(receivedData);
 
-                        // Send Acknowledgment back to the PLC
                         byte[] ackBytes = Encoding.UTF8.GetBytes("ACK_OK");
                         await stream.WriteAsync(ackBytes, 0, ackBytes.Length);
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Catch network drops, timeouts, and hardware failures for this specific connection
-                    Console.WriteLine($"[AsyncServer] Connection Error with PLC: {ex.Message}");
+                    OnServerError?.Invoke($"Connection Error: {ex.Message}");
                 }
             }
         }
@@ -91,7 +81,7 @@ namespace SortationDashboard.Network
         public void Stop()
         {
             _isRunning = false;
-            _listener?.Stop(); // Triggers the ObjectDisposedException in the accept loop to break it cleanly
+            _listener?.Stop();
         }
     }
 }

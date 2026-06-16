@@ -87,6 +87,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DashboardViewModelNew.cs" />
     <Compile Include="Data\CartonRepository.cs" />
     <Compile Include="Models\ParsedCartonEvent.cs" />
     <Compile Include="Network\AsyncPlcServer.cs" />
