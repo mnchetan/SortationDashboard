@@ -1,0 +1,58 @@
+﻿<Window x:Class="SortationDashboard.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Williams-Sonoma - Carton Sortation Dashboard" Height="600" Width="900"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Background="#F5F6FA">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Background="#2F3640" LastChildFill="False">
+            <TextBlock Text="Sortation Control Center" Foreground="White" FontSize="20" FontWeight="Bold" 
+                       VerticalAlignment="Center" Margin="15,0,0,0" DockPanel.Dock="Left"/>
+            <TextBlock Text="{Binding ServerStatusText}" Foreground="{Binding ServerStatusColor}" FontSize="14" FontWeight="Bold" 
+           VerticalAlignment="Center" Margin="0,0,15,0" DockPanel.Dock="Right"/>
+
+            <TextBlock Text="Ready." Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0"/>
+
+            <TextBlock Text="{Binding StatusBarText}" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </DockPanel>
+
+        <StackPanel Grid.Row="1" Grid.Column="0" Background="#DCDDE1" Orientation="Vertical">
+            <TextBlock Text="Server Controls" FontWeight="Bold" Margin="10,15,10,10" FontSize="14"/>
+
+            <Button Content="Start Socket Server" Command="{Binding StartServerCommand}" Height="35" Margin="10,5" Background="#4CD137" Foreground="White" FontWeight="Bold"/>
+            <Button Content="Stop Socket Server" Command="{Binding StopServerCommand}" Height="35" Margin="10,5" Background="#E84118" Foreground="White" FontWeight="Bold"/>
+            <Button Content="Clear Event Log" Command="{Binding ClearLogsCommand}" Height="35" Margin="10,25,10,5" Background="#7F8FA6" Foreground="White"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Grid.Column="1" Margin="15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Live Carton Events (TCP/ZPL Streams)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+            <ListBox Grid.Row="1" BorderBrush="#718093" BorderThickness="1" Background="White" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBoxItem Content="[10:01:05] PLC Connection Established..."/>
+            </ListBox>
+
+            <ListBox Grid.Row="1" ItemsSource="{Binding EventLogs}" BorderBrush="#718093" BorderThickness="1" Background="White" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        </Grid>
+
+        <DockPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Background="#2F3640">
+            <TextBlock Text="Ready." Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </DockPanel>
+
+    </Grid>
+</Window>
