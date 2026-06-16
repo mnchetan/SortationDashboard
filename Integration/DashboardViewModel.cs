@@ -1,5 +1,9 @@
-﻿using System;
+﻿using SortationDashboard.Data;
+using SortationDashboard.Models;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Configuration;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -21,6 +25,7 @@ namespace SortationDashboard
             StartServerCommand = new RelayCommand(ExecuteStartServer, CanStartServer);
             StopServerCommand = new RelayCommand(ExecuteStopServer, CanStopServer);
             ClearLogsCommand = new RelayCommand(ExecuteClearLogs);
+            LoadHistoryCommand = new RelayCommand(ExecuteLoadHistory);
         }
 
         public ObservableCollection<string> EventLogs { get; }
@@ -48,8 +53,37 @@ namespace SortationDashboard
         public ICommand StartServerCommand { get; }
         public ICommand StopServerCommand { get; }
         public ICommand ClearLogsCommand { get; }
+        public ICommand LoadHistoryCommand { get; }
 
         // --- Command Execution Logic ---
+
+
+        // 3. Add the execution logic
+        private async void ExecuteLoadHistory(object obj)
+        {
+            StatusBarText = "Loading history from local database...";
+            EventLogs.Clear();
+
+            try
+            {
+                string connStr = System.Configuration.ConfigurationManager.ConnectionStrings["SortationDbConnection"].ConnectionString;
+                CartonRepository repo = new SortationDashboard.Data.CartonRepository(connStr);
+
+                List<ParsedCartonEvent> history = await repo.GetRecentEventsAsync();
+
+                foreach (ParsedCartonEvent item in history)
+                {
+                    EventLogs.Add($"[HISTORY {item.ProcessedTimestamp:HH:mm:ss}] {item.LabelNumber} -> {item.TargetChute}");
+                }
+
+                StatusBarText = $"Loaded {history.Count} historical events.";
+            }
+            catch (Exception ex)
+            {
+                StatusBarText = "Database read failed.";
+                EventLogs.Add($"ERROR: {ex.Message}");
+            }
+        }
 
         private bool CanStartServer(object obj) => !_isServerRunning;
 
@@ -81,30 +115,36 @@ namespace SortationDashboard
 
         private async Task SimulateIncomingSocketDataAsync()
         {
-            Random random = new Random();
+            Random random = new System.Random();
+            string connStr = ConfigurationManager.ConnectionStrings["SortationDbConnection"].ConnectionString;
+            CartonRepository repo = new CartonRepository(connStr);
 
-            // This loop runs on a BACKGROUND thread, keeping the UI perfectly responsive.
             while (_isServerRunning)
             {
-                // Simulate the wait time between physical cartons rolling down a conveyor belt (1 to 3 seconds)
                 await Task.Delay(random.Next(1000, 3000));
+                if (!_isServerRunning) break;
 
-                if (!_isServerRunning) break; // Exit if the user clicked Stop
-
-                // Generate the mock TCP payload
-                string mockTcpMessage = $"[{DateTime.Now:HH:mm:ss}] Carton Scanned: LBL-{random.Next(10000, 99999)} - Route: Chute {random.Next(1, 5)}";
-
-                // CRITICAL: We cannot just call EventLogs.Add() here. We must use the Dispatcher.
-                Application.Current.Dispatcher.Invoke(() =>
+                // Create the event
+                ParsedCartonEvent newEvent = new ParsedCartonEvent
                 {
-                    EventLogs.Add(mockTcpMessage);
+                    MessageId = System.Guid.NewGuid().ToString(), // Unique ID
+                    EventType = "SCAN",
+                    LabelNumber = $"LBL-{random.Next(10000, 99999)}",
+                    TargetChute = $"CHUTE_{random.Next(1, 5)}",
+                    ProcessedTimestamp = System.DateTime.Now
+                };
 
-                    // Optional: Keep the list from growing infinitely in memory
-                    if (EventLogs.Count > 100)
+                // WRITE TO SQL DATABASE
+                bool saved = await repo.InsertEventAsync(newEvent);
+
+                if (saved)
+                {
+                    // Safely push to UI
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        EventLogs.RemoveAt(0);
-                    }
-                });
+                        EventLogs.Add($"[DB SAVED {newEvent.ProcessedTimestamp:HH:mm:ss}] {newEvent.LabelNumber} -> {newEvent.TargetChute}");
+                    });
+                }
             }
         }
 

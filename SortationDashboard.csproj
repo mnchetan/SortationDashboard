@@ -67,6 +67,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -86,6 +87,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Data\CartonRepository.cs" />
+    <Compile Include="Models\ParsedCartonEvent.cs" />
     <Compile Include="Network\AsyncPlcServer.cs" />
     <Compile Include="Integration\CartonEventProcessor.cs" />
     <Compile Include="Network\PlcSimulator.cs" />

@@ -32,6 +32,7 @@
 
             <Button Content="Start Socket Server" Command="{Binding StartServerCommand}" Height="35" Margin="10,5" Background="#4CD137" Foreground="White" FontWeight="Bold"/>
             <Button Content="Stop Socket Server" Command="{Binding StopServerCommand}" Height="35" Margin="10,5" Background="#E84118" Foreground="White" FontWeight="Bold"/>
+            <Button Content="Load DB History" Command="{Binding LoadHistoryCommand}" Height="35" Margin="10,5" Background="#2980b9" Foreground="White" FontWeight="Bold"/>
             <Button Content="Clear Event Log" Command="{Binding ClearLogsCommand}" Height="35" Margin="10,25,10,5" Background="#7F8FA6" Foreground="White"/>
         </StackPanel>
 
