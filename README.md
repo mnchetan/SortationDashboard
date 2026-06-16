@@ -102,7 +102,7 @@ Strict adherence to Dispatcher boundaries, safely marshaling high-speed backgrou
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YourUsername/YourRepositoryName.git
+git clone https://github.com/mnchetan/SortationDashboard.git
 ```
 
 #### 2. Open the Solution
